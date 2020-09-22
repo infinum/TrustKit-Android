@@ -4,6 +4,7 @@ import com.datatheorem.android.trustkit.utils.TrustKitLog;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.security.cert.Certificate;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashSet;
@@ -12,11 +13,11 @@ import java.util.Set;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-
 public final class DomainPinningPolicy {
 
     // The default URL to submit pin failure report to
     private static final URL DEFAULT_REPORTING_URL;
+
     static {
         java.net.URL defaultUrl;
         try {
@@ -33,15 +34,17 @@ public final class DomainPinningPolicy {
     @Nullable private final Date expirationDate;
     private final boolean shouldEnforcePinning;
     @NonNull private final Set<URL> reportUris;
+    private Set<Certificate> trustAnchors = null;
 
     DomainPinningPolicy(@NonNull String hostname,
-                        Boolean shouldIncludeSubdomains,
-                        Set<String> publicKeyHashStrList,
-                        Boolean shouldEnforcePinning,
-                        @Nullable Date expirationDate,
-                        @Nullable Set<String> reportUriStrList,
-                        Boolean shouldDisableDefaultReportUri)
-            throws MalformedURLException {
+        Boolean shouldIncludeSubdomains,
+        Set<String> publicKeyHashStrList,
+        Boolean shouldEnforcePinning,
+        @Nullable Date expirationDate,
+        @Nullable Set<String> reportUriStrList,
+        Boolean shouldDisableDefaultReportUri,
+        Set<Certificate> trustAnchors)
+        throws MalformedURLException {
         // Run some sanity checks on the configuration
         // Check if the hostname seems valid
         DomainValidator domainValidator = DomainValidator.getInstance();
@@ -53,8 +56,9 @@ public final class DomainPinningPolicy {
         // Due to the fact some configurations could be added without any pin (e.g. localhost)
         // the publicKeyHashStrList would be null.
         // Thus we're managing these cases as an empty set of pins.
-        if (publicKeyHashStrList == null)
+        if (publicKeyHashStrList == null) {
             publicKeyHashStrList = new HashSet<>();
+        }
 
         // Parse boolean settings and handle default values
         if (shouldEnforcePinning == null) {
@@ -68,28 +72,27 @@ public final class DomainPinningPolicy {
             this.shouldIncludeSubdomains = shouldIncludeSubdomains;
         }
 
-
         // Check if the configuration has a empty pin-set and still would enforce pinning
         // TrustKit should not work if the configuration contains both (opposite behaviors)
         if (publicKeyHashStrList.isEmpty() && this.shouldEnforcePinning) {
-            throw new ConfigurationException("An empty pin-set was supplied "+
-              "for domain " + this.hostname + " with the enforcePinning set to true. " +
-              "An empty pin-set disables pinning and can't be use with enforcePinning set to true.");
+            throw new ConfigurationException("An empty pin-set was supplied " +
+                "for domain " + this.hostname + " with the enforcePinning set to true. " +
+                "An empty pin-set disables pinning and can't be use with enforcePinning set to true.");
         }
 
         // Check if the configuration has at least two pins (including a backup pin)
         // TrustKit should not work if the configuration contains only one pin
         // more info (https://tools.ietf.org/html/rfc7469#page-21)
         if (publicKeyHashStrList.size() < 2 && this.shouldEnforcePinning) {
-            throw new ConfigurationException("Less than two pins were supplied "+
-                    "for domain " + this.hostname + ". This might " +
-                    "brick your App; please review the Getting Started guide in " +
-                    "./docs/getting-started.md");
+            throw new ConfigurationException("Less than two pins were supplied " +
+                "for domain " + this.hostname + ". This might " +
+                "brick your App; please review the Getting Started guide in " +
+                "./docs/getting-started.md");
         }
 
         // Parse the supplied pins
         publicKeyPins = new HashSet<>();
-        for (String pinStr : publicKeyHashStrList)  {
+        for (String pinStr : publicKeyHashStrList) {
             publicKeyPins.add(new PublicKeyPin(pinStr));
         }
 
@@ -102,11 +105,12 @@ public final class DomainPinningPolicy {
         }
 
         // Add the default report URL
-        if ((shouldDisableDefaultReportUri == null) || (!shouldDisableDefaultReportUri) ) {
+        if ((shouldDisableDefaultReportUri == null) || (!shouldDisableDefaultReportUri)) {
             reportUris.add(DEFAULT_REPORTING_URL);
         }
 
         this.expirationDate = expirationDate;
+        this.trustAnchors = trustAnchors;
     }
 
     @NonNull
@@ -137,20 +141,24 @@ public final class DomainPinningPolicy {
         return expirationDate;
     }
 
+    public Set<Certificate> getTrustAnchors() {
+        return trustAnchors;
+    }
+
     @Override
     public String toString() {
         return "DomainPinningPolicy{" +
-                "hostname = " + hostname + "\n" +
-                "knownPins = " + Arrays.toString(publicKeyPins.toArray()) +
-                "\n" +
-                "shouldEnforcePinning = " + shouldEnforcePinning + "\n" +
-                "reportUris = " + reportUris + "\n" +
-                "shouldIncludeSubdomains = " + shouldIncludeSubdomains + "\n" +
-                "}";
+            "hostname = " + hostname + "\n" +
+            "knownPins = " + Arrays.toString(publicKeyPins.toArray()) +
+            "\n" +
+            "shouldEnforcePinning = " + shouldEnforcePinning + "\n" +
+            "reportUris = " + reportUris + "\n" +
+            "shouldIncludeSubdomains = " + shouldIncludeSubdomains + "\n" +
+            "}";
     }
 
-
     public static final class Builder {
+
         // The domain must always be specified in domain-config
         private String hostname;
 
@@ -161,6 +169,7 @@ public final class DomainPinningPolicy {
         private Boolean shouldEnforcePinning;
         private Set<String> reportUris;
         private Boolean shouldDisableDefaultReportUri;
+        private Set<Certificate> trustAnchors = null;
 
         // The parent domain-config
         private Builder parentBuilder = null;
@@ -194,6 +203,10 @@ public final class DomainPinningPolicy {
                 if (shouldDisableDefaultReportUri == null) {
                     shouldDisableDefaultReportUri = parentBuilder.getShouldDisableDefaultReportUri();
                 }
+
+                if (trustAnchors == null) {
+                    trustAnchors = parentBuilder.getTrustAnchors();
+                }
             }
 
             if (publicKeyHashes == null) {
@@ -201,13 +214,14 @@ public final class DomainPinningPolicy {
                 return null;
             }
             return new DomainPinningPolicy(
-                    hostname,
-                    shouldIncludeSubdomains,
-                    publicKeyHashes,
-                    shouldEnforcePinning,
-                    expirationDate,
-                    reportUris,
-                    shouldDisableDefaultReportUri
+                hostname,
+                shouldIncludeSubdomains,
+                publicKeyHashes,
+                shouldEnforcePinning,
+                expirationDate,
+                reportUris,
+                shouldDisableDefaultReportUri,
+                trustAnchors
             );
         }
 
@@ -281,6 +295,14 @@ public final class DomainPinningPolicy {
         public Builder setShouldDisableDefaultReportUri(Boolean shouldDisableDefaultReportUri) {
             this.shouldDisableDefaultReportUri = shouldDisableDefaultReportUri;
             return this;
+        }
+
+        public Set<Certificate> getTrustAnchors() {
+            return trustAnchors;
+        }
+
+        public void setTrustAnchors(Set<Certificate> trustAnchors) {
+            this.trustAnchors = trustAnchors;
         }
     }
 }

@@ -34,8 +34,8 @@ public class DomainPinningPolicyTest {
         // Given a valid policy for a domain
         // When parsing it, it succeeds
         DomainPinningPolicy policy = new DomainPinningPolicy(
-                "www.test.com", true, pins, true, date, reportUris, false
-        );
+                "www.test.com", true, pins, true, date, reportUris, false,
+        null);
         // And the right configuration was saved
         assertEquals("www.test.com", policy.getHostname());
         assertEquals(date, policy.getExpirationDate());
@@ -66,8 +66,7 @@ public class DomainPinningPolicyTest {
 
         // When parsing it, it succeeds
         DomainPinningPolicy policy = new DomainPinningPolicy(
-                internationalDomain, true, pins, true, date, reportUris, false
-        );
+                internationalDomain, true, pins, true, date, reportUris, false, null);
         assertEquals(policy.getHostname(), internationalDomain);
         assertEquals(policy.getHostname(), "českárepublika.icom.museum");
     }
@@ -81,7 +80,7 @@ public class DomainPinningPolicyTest {
         // When parsing it, it fails
         boolean didReceiveConfigError = false;
         try {
-            new DomainPinningPolicy("www.test.com", true, badPins, true, date, reportUris, false);
+            new DomainPinningPolicy("www.test.com", true, badPins, true, date, reportUris, false, null);
         } catch (ConfigurationException e) {
             if (e.getMessage().startsWith("Less than two pins")) {
                 didReceiveConfigError = true;
@@ -101,7 +100,7 @@ public class DomainPinningPolicyTest {
 
         // When parsing it, it fails
         try {
-            new DomainPinningPolicy("www.test.com", true, emptyPins, true, date, reportUris, false);
+            new DomainPinningPolicy("www.test.com", true, emptyPins, true, date, reportUris, false, null);
         } catch (ConfigurationException e) {
             if (e.getMessage().startsWith("An empty pin-set")) {
                 didReceivedConfigError = true;
@@ -120,7 +119,7 @@ public class DomainPinningPolicyTest {
         // When parsing it, it fails
         boolean didReceiveConfigError = false;
         try {
-            new DomainPinningPolicy(badDomain, true, pins, true, date, reportUris, false);
+            new DomainPinningPolicy(badDomain, true, pins, true, date, reportUris, false, null);
         }
         catch (ConfigurationException e) {
             if (e.getMessage().startsWith("Tried to pin an invalid domain")) {

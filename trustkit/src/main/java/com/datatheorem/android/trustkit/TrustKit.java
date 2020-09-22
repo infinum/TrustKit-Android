@@ -30,20 +30,19 @@ import javax.net.ssl.X509TrustManager;
 
 import androidx.annotation.NonNull;
 
-
 /**
  * Class that provides all of the TrustKit public APIs.
  *
  * <p>
- *     It should be used to initialize the App's SSL pinning policy and to retrieve the
- *     corresponding {@code SSLSocketFactory} and {@code X509TrustManager}, to be used to add SSL
- *     pinning validation to the App's network connections.
+ * It should be used to initialize the App's SSL pinning policy and to retrieve the
+ * corresponding {@code SSLSocketFactory} and {@code X509TrustManager}, to be used to add SSL
+ * pinning validation to the App's network connections.
  * </p>
  *
  * <p>
- *     TrustKit works by extending the
- *     <a href="https://developer.android.com/training/articles/security-config.html" target="_blank">
- *         Android N Network Security Configuration</a> in two ways:
+ * TrustKit works by extending the
+ * <a href="https://developer.android.com/training/articles/security-config.html" target="_blank">
+ * Android N Network Security Configuration</a> in two ways:
  *
  *     <ul>
  *         <li>It provides support for the SSL pinning functionality of the Android N Network
@@ -57,7 +56,7 @@ import androidx.annotation.NonNull;
  *             Public Key Pinning</a> and <a href="https://github.com/datatheorem/trustkit" target="_blank">TrustKit
  *             iOS</a>.</li>
  *     </ul>
- *
+ * <p>
  *     For better compatibility, TrustKit will also run on API levels 15 and 16 but its
  *     functionality will be disabled.
  * </p>
@@ -83,9 +82,9 @@ import androidx.annotation.NonNull;
  *     {@code system} values will be ignored).</li>
  * </ul>
  *
- *<p>
+ * <p>
  *     On Android N devices, the OS' implementation is used and all XML tags are supported.
- *</p>
+ * </p>
  *
  * <h3>Additional TrustKit Settings</h3>
  *
@@ -122,7 +121,7 @@ import androidx.annotation.NonNull;
  *     </ul>
  *
  * <h4>{@code <report-uri>}</h4>
- *
+ * <p>
  *     A URL to which pin validation failures should be reported, to be defined within a
  *     {@code <trustkit-config>} tag. The format of the reports is similar to the one described in
  *     <a href="https://tools.ietf.org/html/rfc7469#section-2.1.4" target="_blank">RFC 7469 for the HPKP
@@ -167,7 +166,6 @@ import androidx.annotation.NonNull;
  *         </network-security-config>
  *     }
  * </pre>
- *
  */
 public class TrustKit {
 
@@ -176,21 +174,18 @@ public class TrustKit {
     private final TrustKitConfiguration trustKitConfiguration;
 
     protected TrustKit(@NonNull Context context,
-                       @NonNull TrustKitConfiguration trustKitConfiguration) {
+        @NonNull TrustKitConfiguration trustKitConfiguration) {
         this.trustKitConfiguration = trustKitConfiguration;
 
         // Setup the debug-overrides setting if the App is debuggable
         // Do not use BuildConfig.DEBUG as it does not work for libraries
         boolean isAppDebuggable = (0 !=
-                (context.getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE));
+            (context.getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE));
         Set<Certificate> debugCaCerts = null;
-        boolean shouldOverridePins = false;
-        if (isAppDebuggable) {
-            debugCaCerts = trustKitConfiguration.getDebugCaCertificates();
-            if (debugCaCerts != null) {
-                TrustKitLog.i("App is debuggable - processing <debug-overrides> configuration.");
-            }
-            shouldOverridePins = trustKitConfiguration.shouldOverridePins();
+        boolean shouldOverridePins = trustKitConfiguration.shouldOverridePins();
+        debugCaCerts = trustKitConfiguration.getDebugCaCertificates();
+        if (isAppDebuggable && debugCaCerts != null) {
+            TrustKitLog.i("App is debuggable - processing <debug-overrides> configuration.");
         }
 
         // Create the background reporter for sending pin failure reports
@@ -198,7 +193,6 @@ public class TrustKit {
         String appVersion;
         try {
             appVersion = context.getPackageManager().getPackageInfo(appPackageName, 0).versionName;
-
         } catch (PackageManager.NameNotFoundException e) {
             appVersion = "N/A";
         }
@@ -209,20 +203,21 @@ public class TrustKit {
 
         String appVendorId = VendorIdentifier.getOrCreate(context);
         BackgroundReporter reporter = new BackgroundReporter(context, appPackageName, appVersion,
-                appVendorId);
+            appVendorId);
 
         // Initialize the trust manager builder
         try {
             TrustManagerBuilder.initializeBaselineTrustManager(debugCaCerts,
-                    shouldOverridePins, reporter);
+                shouldOverridePins, reporter);
         } catch (CertificateException | NoSuchAlgorithmException | KeyStoreException
-                | IOException e) {
+            | IOException e) {
             throw new ConfigurationException("Could not parse <debug-overrides> certificates");
         }
     }
 
-    /** Try to retrieve the Network Security Policy resource ID configured in the App's manifest.
-     *
+    /**
+     * Try to retrieve the Network Security Policy resource ID configured in the App's manifest.
+     * <p>
      * Somewhat convoluted as other means of getting the resource ID involve using private APIs.
      *
      * @param context
@@ -234,6 +229,7 @@ public class TrustKit {
 
         // Dump the content of the ApplicationInfo, which contains the resource ID on Android N
         class NetSecConfigResIdRetriever implements Printer {
+
             private int netSecConfigResourceId = -1;
             private final String NETSEC_LINE_FORMAT = "networkSecurityConfigRes=0x";
 
@@ -242,12 +238,14 @@ public class TrustKit {
                     // Attempt at parsing "networkSecurityConfigRes=0x1234"
                     if (x.contains(NETSEC_LINE_FORMAT)) {
                         netSecConfigResourceId =
-                                Integer.parseInt(x.substring(NETSEC_LINE_FORMAT.length()), 16);
+                            Integer.parseInt(x.substring(NETSEC_LINE_FORMAT.length()), 16);
                     }
                 }
             }
 
-            private int getNetworkSecurityConfigResId() { return netSecConfigResourceId; }
+            private int getNetworkSecurityConfigResId() {
+                return netSecConfigResourceId;
+            }
         }
 
         NetSecConfigResIdRetriever retriever = new NetSecConfigResIdRetriever();
@@ -255,36 +253,38 @@ public class TrustKit {
         return retriever.getNetworkSecurityConfigResId();
     }
 
-    /** Initialize TrustKit with the Network Security Configuration file at the default location
+    /**
+     * Initialize TrustKit with the Network Security Configuration file at the default location
      * res/xml/network_security_config.xml. The Network Security Configuration file must also have
      * been <a href="https://developer.android.com/training/articles/security-config.html#manifest" target="_blank">
-     *     added to the App's manifest</a>.
+     * added to the App's manifest</a>.
      *
      * @param context the application's context.
      * @throws ConfigurationException if the policy could not be parsed or contained errors.
      */
     @NonNull
     public synchronized static TrustKit initializeWithNetworkSecurityConfiguration(
-            @NonNull Context context) {
+        @NonNull Context context) {
         // Try to get the default network policy resource ID
         int networkSecurityConfigId = context.getResources().getIdentifier(
-                "network_security_config", "xml", context.getPackageName());
+            "network_security_config", "xml", context.getPackageName());
         return initializeWithNetworkSecurityConfiguration(context, networkSecurityConfigId);
     }
 
-    /** Initialize TrustKit with the Network Security Configuration file with the specified
+    /**
+     * Initialize TrustKit with the Network Security Configuration file with the specified
      * resource ID. The Network Security Configuration file must also have
      * been <a href="https://developer.android.com/training/articles/security-config.html#manifest" target="_blank">
-     *     added to the App's manifest</a>.
+     * added to the App's manifest</a>.
      *
-     * @param context the application's context.
+     * @param context                 the application's context.
      * @param configurationResourceId the resource ID for the Network Security Configuration file to
      *                                use.
      * @throws ConfigurationException if the policy could not be parsed or contained errors.
      */
     @NonNull
     public synchronized static TrustKit initializeWithNetworkSecurityConfiguration(
-            @NonNull Context context, int configurationResourceId) {
+        @NonNull Context context, int configurationResourceId) {
         if (trustKitInstance != null) {
             throw new IllegalStateException("TrustKit has already been initialized");
         }
@@ -297,12 +297,11 @@ public class TrustKit {
                 // Android did not find a policy because the supplied resource ID is wrong or the
                 // policy file is not properly setup in the manifest, or contains bad data
                 throw new ConfigurationException("TrustKit was initialized with a network policy " +
-                        "that was not properly configured for Android N - make sure it is in the " +
-                        "App's Manifest.");
-            }
-            else if (systemConfigResId != configurationResourceId) {
+                    "that was not properly configured for Android N - make sure it is in the " +
+                    "App's Manifest.");
+            } else if (systemConfigResId != configurationResourceId) {
                 throw new ConfigurationException("TrustKit was initialized with a different " +
-                        "network policy than the one configured in the App's manifest.");
+                    "network policy than the one configured in the App's manifest.");
             }
         }
 
@@ -310,20 +309,21 @@ public class TrustKit {
         TrustKitConfiguration trustKitConfiguration;
         try {
             trustKitConfiguration = TrustKitConfiguration.fromXmlPolicy(
-                    context, context.getResources().getXml(configurationResourceId)
+                context, context.getResources().getXml(configurationResourceId)
             );
         } catch (XmlPullParserException | IOException e) {
             throw new ConfigurationException("Could not parse network security policy file");
         } catch (CertificateException e) {
             throw new ConfigurationException("Could not find the debug certificate in the " +
-                    "network security police file");
+                "network security police file");
         }
 
         trustKitInstance = new TrustKit(context, trustKitConfiguration);
         return trustKitInstance;
     }
 
-    /** Retrieve the initialized instance of TrustKit.
+    /**
+     * Retrieve the initialized instance of TrustKit.
      *
      * @throws IllegalStateException if TrustKit has not been initialized.
      */
@@ -335,24 +335,27 @@ public class TrustKit {
         return trustKitInstance;
     }
 
-    /** Retrieve the current TrustKit configuration.
-     *
+    /**
+     * Retrieve the current TrustKit configuration.
      */
     @NonNull
-    public TrustKitConfiguration getConfiguration() { return trustKitConfiguration; }
-    
-    /** Retrieve an {@code SSLSSocketFactory} that implements SSL pinning validation based on the
+    public TrustKitConfiguration getConfiguration() {
+        return trustKitConfiguration;
+    }
+
+    /**
+     * Retrieve an {@code SSLSSocketFactory} that implements SSL pinning validation based on the
      * current TrustKit configuration for the specified serverHostname. It can be used with most
      * network APIs (such as {@code HttpsUrlConnection}) to add SSL pinning validation to the
      * connections.
      *
      * <p>
-     *     The {@code SSLSocketFactory} is configured for the supplied serverHostname, and will
-     *     enforce this domain's pinning policy even if a redirection to a different domain occurs
-     *     during the connection. Hence validation will always fail in the case of a redirection to
-     *     a different domain.
-     *     However, pinning validation is only meant to be used on the App's API server(s), and
-     *     redirections to other domains should not happen in this scenario.
+     * The {@code SSLSocketFactory} is configured for the supplied serverHostname, and will
+     * enforce this domain's pinning policy even if a redirection to a different domain occurs
+     * during the connection. Hence validation will always fail in the case of a redirection to
+     * a different domain.
+     * However, pinning validation is only meant to be used on the App's API server(s), and
+     * redirections to other domains should not happen in this scenario.
      * </p>
      *
      * @param serverHostname the server's hostname that the {@code SSLSocketFactory} will be used to
@@ -363,7 +366,7 @@ public class TrustKit {
     public SSLSocketFactory getSSLSocketFactory(@NonNull String serverHostname) {
         try {
             SSLContext sslContext = SSLContext.getInstance("TLS");
-            sslContext.init(null, new TrustManager[]{getTrustManager(serverHostname)}, null);
+            sslContext.init(null, new TrustManager[] {getTrustManager(serverHostname)}, null);
 
             return sslContext.getSocketFactory();
         } catch (NoSuchAlgorithmException | KeyManagementException e) {
@@ -372,18 +375,18 @@ public class TrustKit {
         }
     }
 
-
-    /** Retrieve an {@code X509TrustManager} that implements SSL pinning validation based on the
+    /**
+     * Retrieve an {@code X509TrustManager} that implements SSL pinning validation based on the
      * current TrustKit configuration for the supplied hostname. It can be used with some network
      * APIs that let developers supply a trust manager to customize SSL validation.
      *
      * <p>
-     *     The {@code X509TrustManager} is configured for the supplied serverHostname, and will
-     *     enforce this domain's pinning policy even if a redirection to a different domain occurs
-     *     during the connection. Hence validation will always fail in the case of a redirection to
-     *     a different domain.
-     *     However, pinning validation is only meant to be used on the App's API server(s), and
-     *     redirections to other domains should not happen in this scenario.
+     * The {@code X509TrustManager} is configured for the supplied serverHostname, and will
+     * enforce this domain's pinning policy even if a redirection to a different domain occurs
+     * during the connection. Hence validation will always fail in the case of a redirection to
+     * a different domain.
+     * However, pinning validation is only meant to be used on the App's API server(s), and
+     * redirections to other domains should not happen in this scenario.
      * </p>
      *
      * @param serverHostname the server's hostname that the {@code X509TrustManager} will be used to

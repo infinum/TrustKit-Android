@@ -16,7 +16,6 @@ import java.util.Set;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-
 public class TrustKitConfiguration {
 
     @NonNull private final Set<DomainPinningPolicy> domainPolicies;
@@ -26,30 +25,33 @@ public class TrustKitConfiguration {
     private final boolean shouldOverridePins;
     @Nullable private final Set<Certificate> debugCaCertificates;
 
-
     public static TrustKitConfiguration fromXmlPolicy(
-            @NonNull Context context, @NonNull XmlPullParser parser
+        @NonNull Context context, @NonNull XmlPullParser parser
     ) throws CertificateException, XmlPullParserException, IOException {
         return TrustKitConfigurationParser.fromXmlPolicy(context, parser);
     }
-
 
     protected TrustKitConfiguration(@NonNull Set<DomainPinningPolicy> domainConfigSet) {
         this(domainConfigSet, false, null);
     }
 
     protected TrustKitConfiguration(
-            @NonNull Set<DomainPinningPolicy> domainConfigSet,
-            boolean shouldOverridePins,
-            @Nullable Set<Certificate> debugCaCerts
+        @NonNull Set<DomainPinningPolicy> domainConfigSet,
+        boolean shouldOverridePins,
+        @Nullable Set<Certificate> debugCaCerts
     ) {
         Set<String> hostnameSet = new HashSet<>();
         for (DomainPinningPolicy domainConfig : domainConfigSet) {
             if (hostnameSet.contains(domainConfig.getHostname())) {
                 throw new ConfigurationException("Policy contains the same domain defined twice: "
-                        + domainConfig.getHostname());
+                    + domainConfig.getHostname());
             }
             hostnameSet.add(domainConfig.getHostname());
+
+            // Override debug certs
+            if (debugCaCerts == null) {
+                debugCaCerts = domainConfig.getTrustAnchors();
+            }
         }
         this.domainPolicies = domainConfigSet;
         this.shouldOverridePins = shouldOverridePins;
@@ -90,7 +92,7 @@ public class TrustKitConfiguration {
 
         if (!domainValidator.isValid(serverHostname)) {
             TrustKitLog.w("Invalid domain supplied: " + serverHostname);
-//            throw new IllegalArgumentException("Invalid domain supplied: " + serverHostname);
+            //            throw new IllegalArgumentException("Invalid domain supplied: " + serverHostname);
         }
 
         DomainPinningPolicy bestMatchPolicy = null;
@@ -103,7 +105,7 @@ public class TrustKitConfiguration {
 
             // Look for the best match for pinning policies that include subdomains
             if (domainPolicy.shouldIncludeSubdomains()
-                    && isSubdomain(domainPolicy.getHostname(), serverHostname)) {
+                && isSubdomain(domainPolicy.getHostname(), serverHostname)) {
                 if (bestMatchPolicy == null) {
                     bestMatchPolicy = domainPolicy;
                 } else if (domainPolicy.getHostname().length() > bestMatchPolicy.getHostname().length()) {
@@ -120,6 +122,6 @@ public class TrustKitConfiguration {
      */
     private static boolean isSubdomain(@NonNull String domain, @NonNull String subdomain) {
         return subdomain.endsWith(domain)
-                && subdomain.charAt(subdomain.length() - domain.length() - 1) == '.';
+            && subdomain.charAt(subdomain.length() - domain.length() - 1) == '.';
     }
 }
