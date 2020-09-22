@@ -1,13 +1,16 @@
 package com.datatheorem.android.trustkit.config;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import com.datatheorem.android.trustkit.utils.TrustKitLog;
+
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 
 public final class DomainPinningPolicy {
@@ -43,7 +46,7 @@ public final class DomainPinningPolicy {
         // Check if the hostname seems valid
         DomainValidator domainValidator = DomainValidator.getInstance();
         if (!domainValidator.isValid(hostname)) {
-            throw new ConfigurationException("Tried to pin an invalid domain: " + hostname);
+            TrustKitLog.w("Tried to pin an invalid domain: " + hostname);
         }
         this.hostname = hostname.trim();
 

@@ -4,7 +4,6 @@ import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.os.Build;
-import androidx.annotation.NonNull;
 import android.util.Printer;
 
 import com.datatheorem.android.trustkit.config.ConfigurationException;
@@ -28,6 +27,8 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
+
+import androidx.annotation.NonNull;
 
 
 /**

@@ -1,15 +1,20 @@
 package com.datatheorem.android.trustkit.config;
 
 import android.content.Context;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+
+import com.datatheorem.android.trustkit.utils.TrustKitLog;
+
+import org.xmlpull.v1.XmlPullParser;
+import org.xmlpull.v1.XmlPullParserException;
+
 import java.io.IOException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.util.HashSet;
 import java.util.Set;
-import org.xmlpull.v1.XmlPullParser;
-import org.xmlpull.v1.XmlPullParserException;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 
 public class TrustKitConfiguration {
@@ -84,7 +89,8 @@ public class TrustKitConfiguration {
         DomainValidator domainValidator = DomainValidator.getInstance(true);
 
         if (!domainValidator.isValid(serverHostname)) {
-            throw new IllegalArgumentException("Invalid domain supplied: " + serverHostname);
+            TrustKitLog.w("Invalid domain supplied: " + serverHostname);
+//            throw new IllegalArgumentException("Invalid domain supplied: " + serverHostname);
         }
 
         DomainPinningPolicy bestMatchPolicy = null;
