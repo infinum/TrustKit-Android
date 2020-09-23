@@ -1,7 +1,8 @@
 package com.datatheorem.android.trustkit.utils;
 
-
 import android.content.Context;
+import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
 
 import java.util.UUID;
 
@@ -18,18 +19,18 @@ public class VendorIdentifier {
 
     @NonNull
     public static String getOrCreate(@NonNull Context appContext) {
-//        SharedPreferences trustKitSharedPreferences =
-//                PreferenceManager.getDefaultSharedPreferences(appContext);
-//        // We store the vendor ID in the App's preferences
-//        String appVendorId = trustKitSharedPreferences.getString(TRUSTKIT_VENDOR_ID, "");
-//        if (appVendorId.equals("")) {
-//            // First time the App is running: generate and store a new vendor ID
-//            TrustKitLog.i("Generating new vendor identifier...");
-//            appVendorId = UUID.randomUUID().toString();
-//            SharedPreferences.Editor editor = trustKitSharedPreferences.edit();
-//            editor.putString(TRUSTKIT_VENDOR_ID, appVendorId);
-//            editor.apply();
-//        }
+        SharedPreferences trustKitSharedPreferences =
+                PreferenceManager.getDefaultSharedPreferences(appContext);
+        // We store the vendor ID in the App's preferences
+        String appVendorId = trustKitSharedPreferences.getString(TRUSTKIT_VENDOR_ID, "");
+        if ("".equals(appVendorId)) {
+            // First time the App is running: generate and store a new vendor ID
+            TrustKitLog.i("Generating new vendor identifier...");
+            appVendorId = UUID.randomUUID().toString();
+            SharedPreferences.Editor editor = trustKitSharedPreferences.edit();
+            editor.putString(TRUSTKIT_VENDOR_ID, appVendorId);
+            editor.apply();
+        }
         return UUID.randomUUID().toString();
     }
 }
