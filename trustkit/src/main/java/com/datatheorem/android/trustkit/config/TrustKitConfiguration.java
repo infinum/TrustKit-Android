@@ -2,6 +2,7 @@ package com.datatheorem.android.trustkit.config;
 
 import android.content.Context;
 
+import com.datatheorem.android.trustkit.TrustKit;
 import com.datatheorem.android.trustkit.utils.TrustKitLog;
 
 import org.xmlpull.v1.XmlPullParser;
@@ -99,8 +100,11 @@ public class TrustKitConfiguration {
         DomainValidator domainValidator = DomainValidator.getInstance(true);
 
         if (!domainValidator.isValid(serverHostname)) {
-            TrustKitLog.w("Invalid domain supplied: " + serverHostname);
-            //            throw new IllegalArgumentException("Invalid domain supplied: " + serverHostname);
+            if (TrustKit.failOnInvalidDomain) {
+                throw new IllegalArgumentException("Invalid domain supplied: " + serverHostname);
+            } else {
+                TrustKitLog.w("Invalid domain supplied: " + serverHostname);
+            }
         }
 
         DomainPinningPolicy bestMatchPolicy = null;

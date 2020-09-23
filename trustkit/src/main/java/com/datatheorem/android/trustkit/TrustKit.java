@@ -170,6 +170,7 @@ import androidx.annotation.NonNull;
 public class TrustKit {
 
     protected static TrustKit trustKitInstance;
+    public static boolean failOnInvalidDomain = true;
 
     private final TrustKitConfiguration trustKitConfiguration;
 
@@ -291,9 +292,28 @@ public class TrustKit {
     @NonNull
     public synchronized static TrustKit initializeWithNetworkSecurityConfiguration(
         @NonNull Context context, int configurationResourceId) {
+        return initializeWithNetworkSecurityConfiguration(context, configurationResourceId, true);
+    }
+
+    /**
+     * Initialize TrustKit with the Network Security Configuration file with the specified
+     * resource ID. The Network Security Configuration file must also have
+     * been <a href="https://developer.android.com/training/articles/security-config.html#manifest" target="_blank">
+     * added to the App's manifest</a>.
+     *
+     * @param context                 the application's context.
+     * @param configurationResourceId the resource ID for the Network Security Configuration file to
+     *                                use.
+     * @throws ConfigurationException if the policy could not be parsed or contained errors.
+     */
+    @NonNull
+    public synchronized static TrustKit initializeWithNetworkSecurityConfiguration(
+        @NonNull Context context, int configurationResourceId, boolean failOnInvalidDomain) {
         if (trustKitInstance != null) {
             throw new IllegalStateException("TrustKit has already been initialized");
         }
+
+        TrustKit.failOnInvalidDomain = failOnInvalidDomain;
 
         // On Android N, ensure that the system was also able to load the policy
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {

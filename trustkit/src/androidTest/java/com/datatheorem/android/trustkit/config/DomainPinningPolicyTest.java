@@ -1,6 +1,8 @@
 package com.datatheorem.android.trustkit.config;
 
 
+import com.datatheorem.android.trustkit.TrustKit;
+
 import org.junit.Test;
 
 import java.net.MalformedURLException;
@@ -10,6 +12,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertTrue;
 
 
@@ -112,7 +115,8 @@ public class DomainPinningPolicyTest {
     }
 
     @Test
-    public void testBadPolicyPinTld() throws MalformedURLException {
+    public void testBadPolicyPinTldError() throws MalformedURLException {
+        TrustKit.failOnInvalidDomain = true;
         // Given a policy for an invalid domain
         String badDomain = ".com";
 
@@ -129,5 +133,26 @@ public class DomainPinningPolicyTest {
             }
         }
         assertTrue(didReceiveConfigError);
+    }
+
+    @Test
+    public void testBadPolicyPinTldWarning() throws MalformedURLException {
+        TrustKit.failOnInvalidDomain = false;
+        // Given a policy for an invalid domain
+        String badDomain = ".com";
+
+        // When parsing it, it fails
+        boolean didReceiveConfigError = false;
+        try {
+            new DomainPinningPolicy(badDomain, true, pins, true, date, reportUris, false, null);
+        }
+        catch (ConfigurationException e) {
+            if (e.getMessage().startsWith("Tried to pin an invalid domain")) {
+                didReceiveConfigError = true;
+            } else {
+                throw e;
+            }
+        }
+        assertFalse(didReceiveConfigError);
     }
 }

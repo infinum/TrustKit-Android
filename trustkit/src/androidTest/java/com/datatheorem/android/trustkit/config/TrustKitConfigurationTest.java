@@ -2,7 +2,7 @@ package com.datatheorem.android.trustkit.config;
 
 import android.content.Context;
 
-import androidx.test.platform.app.InstrumentationRegistry;
+import com.datatheorem.android.trustkit.TrustKit;
 
 import org.junit.Test;
 import org.xmlpull.v1.XmlPullParser;
@@ -21,6 +21,8 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Locale;
+
+import androidx.test.platform.app.InstrumentationRegistry;
 
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertFalse;
@@ -41,7 +43,8 @@ public class TrustKitConfigurationTest {
     }
 
     @Test
-    public void testBadHostnameValidation() throws XmlPullParserException, IOException, CertificateException {
+    public void testBadHostnameValidationError() throws XmlPullParserException, IOException, CertificateException {
+        TrustKit.failOnInvalidDomain = true;
         Context context = InstrumentationRegistry.getInstrumentation().getContext();
         String xml = "" +
                 "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
@@ -65,6 +68,34 @@ public class TrustKitConfigurationTest {
             wasBadDomainRejected = true;
         }
         assertTrue(wasBadDomainRejected);
+    }
+
+    @Test
+    public void testBadHostnameValidationWarning() throws XmlPullParserException, IOException, CertificateException {
+        TrustKit.failOnInvalidDomain = false;
+        Context context = InstrumentationRegistry.getInstrumentation().getContext();
+        String xml = "" +
+            "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
+            "<network-security-config>\n" +
+            "    <domain-config>\n" +
+            "        <domain>www.datatheorem.com</domain>\n" +
+            "        <pin-set>\n" +
+            "            <pin digest=\"SHA-256\">AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</pin>\n" +
+            "            <pin digest=\"SHA-256\">grX4Ta9HpZx6tSHkmCrvpApTQGo67CYDnvprLg5yRME=</pin>\n" +
+            "        </pin-set>\n" +
+            "    </domain-config>\n" +
+            "</network-security-config>";
+        TrustKitConfiguration config = TrustKitConfiguration.fromXmlPolicy(context,
+            parseXmlString(xml));
+
+        // Ensure that something that isn't a domain (such as a URL) gets rejected
+        boolean wasBadDomainRejected = false;
+        try {
+            config.getPolicyForHostname("https://www.datatheorem.com");
+        } catch (IllegalArgumentException e) {
+            wasBadDomainRejected = true;
+        }
+        assertFalse(wasBadDomainRejected);
     }
 
     @Test
