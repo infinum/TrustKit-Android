@@ -19,6 +19,7 @@ import androidx.annotation.Nullable;
 public class TrustKitConfiguration {
 
     @NonNull private final Set<DomainPinningPolicy> domainPolicies;
+    @Nullable private final Set<Certificate> trustAnchorsCertificates;
 
     // For simplicity, this works slightly differently than Android N as we use shouldOverridePins
     // as a global setting instead of a per-<certificates> setting like Android N does
@@ -40,6 +41,7 @@ public class TrustKitConfiguration {
         boolean shouldOverridePins,
         @Nullable Set<Certificate> debugCaCerts
     ) {
+        Set<Certificate> certificates = new HashSet<>();
         Set<String> hostnameSet = new HashSet<>();
         for (DomainPinningPolicy domainConfig : domainConfigSet) {
             if (hostnameSet.contains(domainConfig.getHostname())) {
@@ -48,11 +50,12 @@ public class TrustKitConfiguration {
             }
             hostnameSet.add(domainConfig.getHostname());
 
-            // Override debug certs
-            if (debugCaCerts == null) {
-                debugCaCerts = domainConfig.getTrustAnchors();
+            if (domainConfig.getTrustAnchors() != null) {
+                certificates.addAll(domainConfig.getTrustAnchors());
             }
         }
+
+        this.trustAnchorsCertificates = certificates.isEmpty() ? null : certificates;
         this.domainPolicies = domainConfigSet;
         this.shouldOverridePins = shouldOverridePins;
         this.debugCaCertificates = debugCaCerts;
@@ -74,6 +77,11 @@ public class TrustKitConfiguration {
      */
     public Set<DomainPinningPolicy> getAllPolicies() {
         return this.domainPolicies;
+    }
+
+    @Nullable
+    public Set<Certificate> getTrustAnchorsCertificates() {
+        return trustAnchorsCertificates;
     }
 
     /**

@@ -111,7 +111,7 @@ class TrustKitConfigurationParser {
                         .setShouldEnforcePinning(trustkitTag.enforcePinning)
                         .setShouldDisableDefaultReportUri(trustkitTag.disableDefaultReportUri);
                 } else if ("trust-anchors".equals(parser.getName())) {
-                    Set<Certificate> trustAnchor = readTrustAnchor(context, parser);
+                    Set<Certificate> trustAnchor = readTrustAnchors(context, parser);
                     builder.setTrustAnchors(trustAnchor);
                 }
             }
@@ -242,10 +242,10 @@ class TrustKitConfigurationParser {
         Set<Certificate> debugCaCertificates = null;
     }
 
-    private static Set<Certificate> readTrustAnchor(@NonNull Context context, @NonNull XmlPullParser parser) throws CertificateException,
+    private static Set<Certificate> readTrustAnchors(@NonNull Context context, @NonNull XmlPullParser parser) throws CertificateException,
         IOException, XmlPullParserException {
         // Parse trust anchor
-        Set<Certificate> debugCaCertificates = new HashSet<>();
+        Set<Certificate> trustAnchorsCertificates = new HashSet<>();
 
         int eventType = parser.next();
         while (!((eventType == XmlPullParser.END_TAG) && "trust-anchors".equals(parser.getName()))) {
@@ -268,10 +268,10 @@ class TrustKitConfigurationParser {
                                 caPathFromUser.split("/")[1], "raw",
                                 context.getPackageName()));
 
-                    debugCaCertificates.add(CertificateFactory.getInstance("X.509")
+                    trustAnchorsCertificates.add(CertificateFactory.getInstance("X.509")
                         .generateCertificate(stream));
                 } else {
-                    TrustKitLog.i("No <debug-overrides> certificates found by TrustKit." +
+                    TrustKitLog.i("No <trust-anchors> certificates found by TrustKit." +
                         " Please check your @raw folder " +
                         "(TrustKit doesn't support system and user installed certificates).");
                 }
@@ -279,7 +279,7 @@ class TrustKitConfigurationParser {
             eventType = parser.next();
         }
 
-        return debugCaCertificates;
+        return trustAnchorsCertificates;
     }
 
     @NonNull

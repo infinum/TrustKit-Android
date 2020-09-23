@@ -1,18 +1,22 @@
 package com.datatheorem.android.trustkit.pinning;
 
 import android.os.Build;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+
 import com.datatheorem.android.trustkit.TrustKit;
 import com.datatheorem.android.trustkit.config.DomainPinningPolicy;
 import com.datatheorem.android.trustkit.reporting.BackgroundReporter;
+
 import java.io.IOException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.util.Set;
+
 import javax.net.ssl.X509TrustManager;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 
 
@@ -27,7 +31,7 @@ public class TrustManagerBuilder {
     // The reporter that will send pinning failure reports
     protected static BackgroundReporter backgroundReporter = null;
 
-    public static void initializeBaselineTrustManager(@Nullable Set<Certificate> debugCaCerts,
+    public static void initializeBaselineTrustManager(@Nullable Set<Certificate> trustAnchors,
                                                       boolean debugOverridePins,
                                                       @NonNull BackgroundReporter reporter)
             throws CertificateException, NoSuchAlgorithmException, KeyStoreException,
@@ -44,9 +48,9 @@ public class TrustManagerBuilder {
         }
 
         shouldOverridePins = debugOverridePins;
-        if ((debugCaCerts != null) && (debugCaCerts.size() > 0) && (Build.VERSION.SDK_INT < 24)) {
+        if ((trustAnchors != null) && (trustAnchors.size() > 0) && (Build.VERSION.SDK_INT < 24)) {
             // Debug overrides is enabled and we are on a pre-N device; we need to do it manually
-            baselineTrustManager = DebugOverridesTrustManager.getInstance(debugCaCerts);
+            baselineTrustManager = ExtendedTrustManager.getInstance(trustAnchors);
         }
 
         backgroundReporter = reporter;

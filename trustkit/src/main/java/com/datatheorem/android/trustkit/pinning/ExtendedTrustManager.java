@@ -15,16 +15,15 @@ import javax.net.ssl.X509TrustManager;
 
 
 /**
- * Used when <debug-overrides> is enabled in the network security policy and we are on a pre-N
+ * Used when <debug-overrides> or <trust-anchors> is enabled in the network security policy and we are on a pre-N
  * Android device (as Android N automatically takes care of this). It returns a trust manager that
- * trusts the supplied debug CA certificates, in addition to the Android system and user CA
- * certificates.
+ * trusts the supplied debug CA certificates, in addition to the Android system and user CA certificates.
  */
-class DebugOverridesTrustManager {
+class ExtendedTrustManager {
 
-    public static X509TrustManager getInstance(Set<Certificate> debugCaCerts) throws
+    public static X509TrustManager getInstance(Set<Certificate> certificates) throws
             CertificateException, IOException, KeyStoreException, NoSuchAlgorithmException {
-        X509TrustManager debugTrustManager = null;
+        X509TrustManager extendedTrustManager = null;
 
         // Create a KeyStore containing our trusted CAs and the Android user and system CAs
         KeyStore systemKeyStore = KeyStore.getInstance("AndroidCAStore");
@@ -39,9 +38,9 @@ class DebugOverridesTrustManager {
             keyStore.setCertificateEntry(alias , cert);
         }
 
-        // Add the extra debug CAs to the store
-        for (Certificate caCert : debugCaCerts) {
-            String alias = "debug: " + ((X509Certificate) caCert).getSubjectDN().getName();
+        // Add the extra CAs to the store
+        for (Certificate caCert : certificates) {
+            String alias = "anchor: " + ((X509Certificate) caCert).getSubjectDN().getName();
             keyStore.setCertificateEntry(alias , caCert);
         }
 
@@ -53,13 +52,13 @@ class DebugOverridesTrustManager {
 
         for (TrustManager trustManager : trustManagerFactory.getTrustManagers()) {
             if (trustManager instanceof X509TrustManager) {
-                debugTrustManager = (X509TrustManager) trustManager;
+                extendedTrustManager = (X509TrustManager) trustManager;
             }
         }
 
-        if (debugTrustManager == null) {
+        if (extendedTrustManager == null) {
             throw new IllegalStateException("Should never happen");
         }
-        return debugTrustManager;
+        return extendedTrustManager;
     }
 }

@@ -75,7 +75,7 @@ import androidx.annotation.NonNull;
  *     <li>{@code <pin-set>} and the {@code expiration} attribute.</li>
  *     <li>{@code <pin>} and the {@code digest} attribute.</li>
  *     <li>{@code <debug-overrides>}.</li>
- *     <li>{@code <trust-anchors>}, but only within a {@code <debug-overrides>} tag. Hence, custom
+ *     <li>{@code <trust-anchors>}, but will work globally. Hence, custom
  *     trust anchors for specific domains cannot be set.</li>
  *     <li>{@code <certificates>} and the {@code overridePins} and {@code src} attributes. Only raw
  *     certificate files are supported for the {@code src} attribute ({@code user} and
@@ -181,11 +181,18 @@ public class TrustKit {
         // Do not use BuildConfig.DEBUG as it does not work for libraries
         boolean isAppDebuggable = (0 !=
             (context.getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE));
-        Set<Certificate> debugCaCerts = null;
-        boolean shouldOverridePins = trustKitConfiguration.shouldOverridePins();
-        debugCaCerts = trustKitConfiguration.getDebugCaCertificates();
-        if (isAppDebuggable && debugCaCerts != null) {
-            TrustKitLog.i("App is debuggable - processing <debug-overrides> configuration.");
+        Set<Certificate> trustAnchors = null;
+        boolean shouldOverridePins = false;
+        if (isAppDebuggable) {
+            trustAnchors = trustKitConfiguration.getDebugCaCertificates();
+            if (trustAnchors != null) {
+                TrustKitLog.i("App is debuggable - processing <debug-overrides> configuration.");
+            }
+            shouldOverridePins = trustKitConfiguration.shouldOverridePins();
+        }
+
+        if (trustAnchors == null) {
+            trustAnchors = trustKitConfiguration.getTrustAnchorsCertificates();
         }
 
         // Create the background reporter for sending pin failure reports
@@ -207,11 +214,10 @@ public class TrustKit {
 
         // Initialize the trust manager builder
         try {
-            TrustManagerBuilder.initializeBaselineTrustManager(debugCaCerts,
-                shouldOverridePins, reporter);
+            TrustManagerBuilder.initializeBaselineTrustManager(trustAnchors, shouldOverridePins, reporter);
         } catch (CertificateException | NoSuchAlgorithmException | KeyStoreException
             | IOException e) {
-            throw new ConfigurationException("Could not parse <debug-overrides> certificates");
+            throw new ConfigurationException("Could not parse <debug-overrides> or <trust-anchors> certificates");
         }
     }
 
