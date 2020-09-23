@@ -23,6 +23,11 @@ public class VendorIdentifier {
                 PreferenceManager.getDefaultSharedPreferences(appContext);
         // We store the vendor ID in the App's preferences
         String appVendorId = trustKitSharedPreferences.getString(TRUSTKIT_VENDOR_ID, "");
+        // In case null was stored in preferences we will do this instead of assert to ensure NonNull value
+        if (appVendorId == null) {
+            appVendorId = "";
+        }
+
         if ("".equals(appVendorId)) {
             // First time the App is running: generate and store a new vendor ID
             TrustKitLog.i("Generating new vendor identifier...");
@@ -31,6 +36,6 @@ public class VendorIdentifier {
             editor.putString(TRUSTKIT_VENDOR_ID, appVendorId);
             editor.apply();
         }
-        return UUID.randomUUID().toString();
+        return appVendorId;
     }
 }
